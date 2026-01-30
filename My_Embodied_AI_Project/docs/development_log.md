@@ -1,15 +1,108 @@
 由于时间安排冲突，我22至26日在上海参加比赛，没有可以完成任务的设备，27至29日白天需要参加学校的机器人创新设计与实践公选课，只有一天加上三个晚上的时间用于完成任务。时间很紧迫，因此有些部分难以细化
+——————————————————————————————————————————————————————————————————————————————————————
+————————————————————————————————————————————————————————————————————————————————————
 
 1.26
 完成ubuntu下载
-我在26号晚上9点左右回到武汉，开始完成任务。由于设备条件允许，我没有使用vmware，而是直接下载了ubuntu。利用夜间时间完成安装。
+我在26号晚上9点左右回到武汉，开始完成任务。由于设备条件允许，我没有使用vmware，而是直接下载了ubuntu。参考了CSDN：Ubuntu20.04安装指南及初步环境配置（超级详细）包含[ROS Noetic、Terminator、Pycahrm等常用工具安装]。
+由于之前找到的一个镜像源暂停服务了，所以又花费了一定的时间去找别的镜像源。利用夜间时间完成安装。
+————————————————————————————————————————————————————————————————————————————————————————————
+————————————————————————————————————————————————————————————————————————————————————————————————
 
 1.27
 完成ROS环境部署和任务验收点1
-27号晚，我先熟悉了ubuntu的终端的使用，学习了一些常用命令，然后跟随CSDN中的教程安装ROS。学习ubuntu的终端的使用时，我主要使用了AI工具，如豆包和deepseek。
+27号晚，我先熟悉了ubuntu的终端的使用，学习了一些常用命令，然后跟随CSDN中的教程安装ROS。学习ubuntu的终端的使用时，我主要使用了AI工具，如豆包和deepseek。由于第一次使用linux系统，对用终端进行操作很不习惯，这一步花费了很多时间。
+——————————————————————————————————————————————————————————————
+然后完成ROS环境部署，这一步主要参考了CSDN：Ubuntu20.04安装指南及初步环境配置（超级详细）包含[ROS Noetic、Terminator、Pycahrm等常用工具安装]。
+在完成任务验收点1的时候，我又遇到了ubuntu终端使用的新问题，文件的调用还是很不熟练，任务完成后查阅了资料才知道，文件的直接调用是有方向性的，要返回上一级需要使用 cd..。
+————————————————————————————————————————————————————————————————————————————————————————
+——————————————————————————————————————————————————————————————————————————————————————————
 
 1.28
 完成机器人仿生部署及任务验收点2
+前两天都没有遇到什么难以解决的问题，知道开始着手于这部分。一开始，我对任务书上的“前往 GitHub 获取官方包”产生了一定误解，大费周章地想办法注册github账号（虽然本来就需要注册），在官网上找了很久，后来发现，CSDN上的文章提供了下载路径。我通过百度的文心助手，通过提供关键词让文心帮忙寻找需要的参考文献。
+下载官方包这一步主要参考了CSDN：宇树机器狗开发go1。
+————————————————————————————————————————————————————————————————————————
+然后，在尝试完成任务验收点2的过程中，如直接编译报错，依赖库缺失。实际操作后才明白，其实就是东西没下载全，而且缺失的不仅是unitree_legged_msgs。所以，在参考了相关文献后，我又下载了lcm，unitree_legged_sdk，unitree_ros,unitree_ros_to_real,将unitree_ros、unitree_ros_to_real以及前面的unitree_legged_sdk放到go1_ws/src下,把unitree_ros_to_real里的unitree_legged_msgs也移动到go1_ws/src下。在这一步，我还学习了用终端移动文件的操作。
+这一步主要参考了CSDN宇树机器狗开发go1
+完成这一步后，已经可以打开有机器狗和特定环境的gazebo,还可以调节world的设定，如earth 、 space 和 stairs。但机器狗还无法站立，甚至会满地乱滑。
+具体步骤如下：
+
+1：
+安装LCM
+下载链接：https://github.com/lcm-proj/lcm/tree/v1.4.0
+
+下载完成后，将文件解压缩至主目录下。
+
+在lcm-1.4.0文件夹下，终端执行以下命令，编译安装：
+
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+
+2：
+根据运动程序版本，下载对应的SDK包：
+https://github.com/unitreerobotics/unitree_legged_sdk
+这里下载的是3.8.0版本，不同版本适配的机器狗不同。
+
+3：
+下载完成后，将文件解压缩至主目录下，并重命名为unitree_legged_sdk。
+在unitree_legged_sdk文件夹下，终端执行以下命令编译：
+
+cd unitree_legged_sdk
+mkdir build
+cd build
+cmake ..
+make
+在unitree_legged_sdk/build文件夹下执行以下命令
+sudo ./example_walk
+
+4：
+<uri>model:///home/unitree/catkin_ws/src/unitree_ros/unitree_gazebo/worlds/building_editor_models/stairs</uri>
+<uri>model:///home/ubuntu/go1_ws/src/unitree_ros/unitree_gazebo/worlds/building_editor_models/stairs</uri>
+catkin_make
+source devel/setup.bash
+为了避免每次启动launch都要执行一次source devel/setup.bash这个命令，才能执行launch，可以将其写到bashrc 文件中。
+gedit ~/.bashrc
+source ~/go1_ws/devel/setup.bash
+终端执行以下命令在 Rviz 中查看模型：
+roslaunch go1_description go1_rviz.launch
+使用以下命令启动 Gazebo 仿真，此时机器狗是趴在地上的：
+roslaunch unitree_gazebo normal.launch rname:=go1 wname:=stairs
+
+
+5：
+完成这一步后，机器狗可以站立了，但还是无法移动。
+启动 Gazebo 仿真后，另起一个终端控制机器狗站立：
+rosrun unitree_controller unitree_servo
+在另一个终端中运行以下命令，机器狗将围绕原点旋转，这是在世界坐标系下的运动：
+rosrun unitree_controller unitree_move_kinetic
+这里要注意的是：要在另一个终端运行另一个命令。
+
+
+参考文献：
+https://blog.csdn.net/2302_80099075/article/details/156571786
+————————————————————————————————————————————————————————————————————
+
+下一步，用键盘控制机器狗运动。参考项目指导书对下一阶段任务的提示，要使用unitree_guide。通过查阅相关文献，我又下载了unitree_guide，unitree_ros，unitree_legged_msgs三个文件，其中unitree_legged_msgs在上一步中已经完成下载了。
+
+https://github.com/unitreerobotics/unitree_guide
+https://github.com/unitreerobotics/unitree_ros
+https://github.com/unitreerobotics/unitree_ros_to_real
+
+下载完成后，编译还是会报错，根据文献的指导，安装了对应的功能包move_base_msgs
+sudo apt-get install ros-noetic-navigation
+
+然后先打开一个终端，运行source ./devel/setup.bash，然后执行
+roslaunch unitree_guide gazeboSim.launch 打开gazebo仿生环境。
+再打开另一个终端，在相同路径下输入sudo ./devel/lib/unitree_guide/junior_ctrl，启动控制器
+先按下2切换至fixed stand状态，再按4切换至trotting状态，然后就可以用键盘控制了。
+按下键盘上的 W A S D 键 分别控制机器人 前进 左平移 后退 右平移。按下键盘上的 J L 键 分别控制机器人 左转 右转
+
+参考文献：https://blog.csdn.net/Teriri_/article/details/141787540
+
 
 
 1.29
@@ -18,21 +111,13 @@
 在完成第二阶段任务时，我在修改源代码中遇到了很多障碍。因此，我使用了通义灵码来辅助程序的编写。遇到的问题包括，无法理解源代码的含义，不知道如何建立映射，无法打印速度及打印了速度但机器狗无法行动，还有修改代码后出现编译错误。我尝试让通义灵码对源代码进行了细致的分析，用deepseek对任务进行解读和拆解，提供指引，并借助通义灵码完成代码的修改。
 以下是我使用通义灵码的具体过程。
 
-————————————————————————————————————————————————————————————————————————————————
-这个函数将当前进程的调度器设置为SCHED_FIFO（先进先出调度算法）并使用最高优先级。它通过getpid()获取当前进程ID，配置调度参数（对FIFO调度使用最高可用优先级），然后使用sched_setscheduler()应用调度器。如果操作失败，则会打印错误消息以指示失败。
-
-## 详细说明：
-
-- **SCHED_FIFO**: 先进先出调度策略，属于实时调度类别
-- **最大优先级**: 使用系统允许的最高优先级值
-- **getpid()**: 获取当前进程标识符
-- **sched_setscheduler()**: 设置进程调度策略和参数
-- **错误处理**: 操作失败时输出错误信息
+———————————————————————————————————————————————————————————————————————————————
 
 
-
+Q:
 如何引入 ROS 订阅者，监听 /cmd_vel 话题并建立映射：将接收到的线速度和角速度映射到机器人的内部控制变量中。
 
+A：
 提供的代码已经实现了对 /cmd_vel 话题的ROS订阅者功能。以下是其工作原理：
 
 当前实现分析
@@ -60,8 +145,11 @@ new_cmd_received 标志指示是否有新数据可用
     ros_cmd_vel.init(nh);
 }
 
+
+Q:（尝试把键盘控制获得的速度打印出来）
 没有打印速度的原因
 
+A:（以下200行为通义灵码提供的解决方法，即功能实现的路径，可直接跳过到430行）
 // 旧的（错误语法）
 RosCmdVel ros_cmd_vel.init(nh);
 
@@ -343,8 +431,16 @@ Make sure you have the proper include in main.cpp:
 
 The key is to ensure that all source files that are referenced in your project are properly compiled using either `add_executable()` with `target_sources()` or `add_library()`.
 
-参考KeyBoard::changeValue() 函数 ，在RosCmdVel::cmdVelCallback里修改usrvalue
+————————————————————————————————————————————————————————————————————————
 
+
+根据指导，实现了速度的打印，能实现监听，并且能打印手动输入的数据。接下来研究该如何建立映射，用输入的数据控制机器狗的运动,但是由于代码太复杂，难以入手。
+我重新浏览了KeyBoard.cpp文件发现键盘控制于一个名为uservalue的变量密切相关，似乎键盘是通过改变uservalue的值来控制机器狗运动的。所以我希望通过手动输入的数据改变uservalue的值从而实现控制。我先研究了uservalue是什么，以及如何修改。
+
+Q:
+参考KeyBoard::changeValue() 函数 ，在RosCmdVel::cmdVelCallback里修改uservalue
+
+A:
 根据你的需求，你需要在 [RosCmdVel::cmdVelCallback](file:///home/zjn/go1_ws/src/unitree_guide/unitree_guide/include/interface/RosCmdVel.h#L52-L52) 函数中修改 [userValue](file:///home/zjn/go1_ws/src/unitree_guide/unitree_guide/include/interface/CmdPanel.h#L51-L51)，类似于 [KeyBoard::changeValue()](file:///home/zjn/go1_ws/src/unitree_guide/unitree_guide/src/interface/KeyBoard.cpp#L64-L91) 函数的功能。以下是修改后的代码：
 
 ## 修改 RosCmdVel.cpp
@@ -676,4 +772,159 @@ while (running)
 
 这样整合后，[KeyBoard](file:///home/zjn/go1_ws/src/unitree_guide/unitree_guide/include/interface/KeyBoard.h#L22-L45) 类既可以响应键盘输入，也可以接收 ROS 的 [cmd_vel](file:///home/zjn/go1_ws/src/unitree_guide/unitree_guide/include/interface/RosCmdVel.h#L60-L60) 消息，实现了两种控制方式的融合。
 
-—————————————————————————————————————————————————————————————————————————————————
+
+根据通义灵码的指导，我修改了KeyBoard.h的头文件，修改 KeyBoard.cpp实现文件，初始化默认值，更新 userValue，类似 keyboard 的 changeValue 功能，修改 main.cpp，最终实现了通过手动输入x y z的值来控制机器狗定向移动。
+
+——————————————————————————————————————————————————————————————————————————————
+
+接下来开始编写脚本，使机器狗走出一个正方形。
+在这里我遇到了一个问题：无法通过输入z的值来使机器狗转向，只能使其前进后退及左右侧向移动。初步推断是底层代码的问题，但由于时间紧迫，无法深入研究，只能先将就着让机器狗往四个方向移动来实现走正方形，没有对转向的时间进行测试，但由于侧向移动的速度明显低于前进后退，需要修改运动的速度和时间来保证相邻两条边的长度近似。
+
+发布指令有两种方式：
+一是直接手动输入，这对排版缩进有很高的要求，我先草稿中编写再复制：
+rostopic pub -1 /cmd_vel geometry_msgs/Twist "linear:
+  x: 0.3
+  y: 0.0
+  z: 0.0
+angular:
+  x: 0.0
+  y: 0.0
+  z: 0.0"
+sleep 3
+
+rostopic pub -1 /cmd_vel geometry_msgs/Twist "linear:
+  x: 0.0
+  y: 0.3
+  z: 0.0
+angular:
+  x: 0.0
+  y: 0.0
+  z: 0.0"
+sleep 3
+
+rostopic pub -1 /cmd_vel geometry_msgs/Twist "linear:
+  x: -0.3
+  y: 0.0
+  z: 0.0
+angular:
+  x: 0.0
+  y: 0.0
+  z: 0.0"
+sleep 3
+
+rostopic pub -1 /cmd_vel geometry_msgs/Twist "linear:
+  x: 0.0
+  y: -0.3
+  z: 0.0
+angular:
+  x: 0.0
+  y: 0.0
+  z: 0.0"
+sleep 3
+
+rostopic pub -1 /cmd_vel geometry_msgs/Twist "linear:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+angular:
+  x: 0.0
+  y: 0.0
+  z: 0.0"
+
+  二是编写一个python脚本，这一步由deepseek提供了框架：
+  import rospy
+import time
+from geometry_msgs.msg import Twist
+
+class SquareMovementXY:
+    def __init__(self):
+        rospy.init_node('square_movement_xy', anonymous=True)
+        self.pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        time.sleep(1)  # 等待发布者建立连接
+        
+        self.twist = Twist()
+        print("初始化完成，准备开始正方形运动")
+        
+    def move_direction(self, linear_x, linear_y, duration):
+        """向指定方向移动"""
+        self.twist.linear.x = linear_x
+        self.twist.linear.y = linear_y
+        self.twist.linear.z = 0.0
+        self.twist.angular.x = 0.0
+        self.twist.angular.y = 0.0
+        self.twist.angular.z = 0.0
+        
+        direction = ""
+        if linear_x > 0 and linear_y == 0:
+            direction = "向前"
+        elif linear_x < 0 and linear_y == 0:
+            direction = "向后"
+        elif linear_x == 0 and linear_y > 0:
+            direction = "向左"
+        elif linear_x == 0 and linear_y < 0:
+            direction = "向右"
+            
+        print(f"{direction}移动: X={linear_x}, Y={linear_y}, 时间={duration}秒")
+        
+        # 发布命令并等待
+        self.pub.publish(self.twist)
+        time.sleep(duration)
+        
+        # 停止
+        self.stop()
+        time.sleep(0.5)  # 短暂停顿
+        
+    def stop(self):
+        """停止机器人"""
+        self.twist.linear.x = 0.0
+        self.twist.linear.y = 0.0
+        self.twist.angular.z = 0.0
+        self.pub.publish(self.twist)
+        
+    def run_square(self):
+        """走正方形（使用X,Y方向）"""
+        print("\n=== 开始走正方形 ===")
+        
+        # 第一条边：向前（X轴正方向）
+        self.move_direction(0.3, 0.0, 3)
+        
+        # 第二条边：向左（Y轴正方向）
+        self.move_direction(0.0, 0.3, 3)
+        
+        # 第三条边：向后（X轴负方向）
+        self.move_direction(-0.3, 0.0, 3)
+        
+        # 第四条边：向右（Y轴负方向）
+        self.move_direction(0.0, -0.3, 3)
+        
+        print("\n=== 正方形运动完成 ===")
+
+if __name__ == '__main__':
+    try:
+        controller = SquareMovementXY()
+        controller.run_square()
+    except KeyboardInterrupt:
+        print("\n程序被用户中断")
+        # 确保机器人停止
+        controller.stop()
+    except Exception as e:
+        print(f"\n发生错误: {e}")
+        controller.stop()
+
+
+        ————————————————————————————————————————————————————————————————————
+        ————————————————————————————————————————————————————————————————————
+
+        1.30
+        完成第三阶段任务和任务验收点4
+
+        这个任务相对容易完成，因为将任务步骤交给deepseek之后就得到了完整的代码，而不是像上一个任务那样，只有模糊的指引，需要反复多次提问和修改。
+
+        一开始deepseek提供的程序编译不通过，在统一了变量名后就编译通过了。
+        然后对程序进行修改。一开始运行camera.py时，摄像头的视角是颠倒的，且角度和指导书中的实例相比明显偏高。在询问AI后实现了摄像头的角度调整及画面的上下翻转和左右翻转。
+
+        然后在测试过程中发现改变y的值才能使机器狗前进后退，但deepseek搞成x了，以及移动速度过慢效果不明显等问题，都一一进行了修正。
+
+        另外，一开始机器狗出现了走了几步就不走的情况，在打印了面积和质心坐标等数据后发现，这是由于deepseek提供的方块目标面积过小，在初始位置就达到了最终要求，所以更改了目标面积，效果明显变好了。
+
+        但是，同上一个任务一样，我无法通过更改z的值实现机器狗的转向，只能改为在方块质心偏移时修改x的值，使其侧向移动来代替转向，但效果不是很好。后面再继续研究如何让机器狗转向。

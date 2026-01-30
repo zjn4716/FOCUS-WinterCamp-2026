@@ -34,7 +34,7 @@ class RedBoxTracker:
         self.yaw_error_threshold = rospy.get_param('~yaw_error_threshold', 20)  # 像素误差阈值
         
         # 距离控制 (Forward)
-        self.target_area = rospy.get_param('~target_area', 10000)  # 目标像素面积
+        self.target_area = rospy.get_param('~target_area',20000)  # 目标像素面积
         self.area_tolerance = rospy.get_param('~area_tolerance', 1000)  # 面积容差
         self.min_area = rospy.get_param('~min_area', 500)  # 最小有效面积
         self.max_area = rospy.get_param('~max_area', 30000)  # 最大有效面积
@@ -49,7 +49,7 @@ class RedBoxTracker:
         self.image_center_y = None
         
         # 订阅相机话题
-        self.image_topic = rospy.get_param('~image_topic', '/trunk_camera/image_raw')
+        self.image_topic = rospy.get_param('~image_topic', '/camera_face/color/image_raw')
         self.image_sub = rospy.Subscriber(
             self.image_topic,
             Image,
@@ -85,9 +85,9 @@ class RedBoxTracker:
         
         # 创建显示窗口
         self.display = rospy.get_param('~display', True)
-        if self.display:
-            cv2.namedWindow('Red Box Tracker', cv2.WINDOW_NORMAL)
-            cv2.resizeWindow('Red Box Tracker', 800, 600)
+        #if self.display:
+        cv2.namedWindow('Red Box Tracker', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('Red Box Tracker', 800, 600)
         
         rospy.loginfo(f"Red Box Tracker 初始化完成")
         rospy.loginfo(f"订阅图像: {self.image_topic}")
@@ -100,13 +100,79 @@ class RedBoxTracker:
             # 转换为OpenCV格式
             self.cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
             self.image_received = True
+            # 处理图像
+            self.cv_image = cv2.flip(self.cv_image, -1)  # -1表示水平和垂直都翻转
+
+            #processed = self.process_image2(self.cv_image)
             
+            # 显示图像
+            #if self.display:
+            #cv2.imshow('Unitree Go1 Camera', processed)
+            #cv2.waitKey(1)
             # 处理图像并计算控制命令
             self.process_image()
             
         except CvBridgeError as e:
             rospy.logerr(f"CV桥接错误: {e}")
-    
+    def process_image2(self, image):
+        """图像处理函数"""
+        if image is None:
+            return None
+        
+        # 复制图像以避免修改原始数据
+        result = image.copy()
+        
+        # 获取图像尺寸
+        height, width = image.shape[:2]
+        
+        # 添加文本信息
+        cv2.putText(
+            result,
+            f"Unitree Go1 Camera - {width}x{height}",
+            (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0, 255, 0),
+            2
+        )
+        
+        # 添加帧率显示（简化版）
+        current_time = rospy.Time.now()
+        if hasattr(self, 'last_time'):
+            dt = (current_time - self.last_time).to_sec()
+            fps = 1.0 / dt if dt > 0 else 0
+            cv2.putText(
+                result,
+                f"FPS: {fps:.1f}",
+                (10, 60),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 0),
+                2
+            )
+        self.last_time = current_time
+        
+        # 可选：添加网格线
+        if rospy.get_param('~show_grid', False):
+            # 水平线
+            for i in range(1, 3):
+                y = int(height * i / 3)
+                cv2.line(result, (0, y), (width, y), (0, 255, 255), 1)
+            
+            # 垂直线
+            for i in range(1, 3):
+                x = int(width * i / 3)
+                cv2.line(result, (x, 0), (x, height), (0, 255, 255), 1)
+        
+        # 可选：边缘检测
+        if rospy.get_param('~edge_detection', False):
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            edges = cv2.Canny(gray, 50, 150)
+            edges_colored = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+            # 叠加边缘到原图
+            result = cv2.addWeighted(result, 0.8, edges_colored, 0.2, 0)
+        
+        return result
     def process_image(self):
         """处理图像：检测红色方块并计算控制命令"""
         if self.cv_image is None:
@@ -210,14 +276,14 @@ class RedBoxTracker:
         if abs(self.yaw_error) > self.yaw_error_threshold:
             angular_speed = -self.kp_yaw * self.yaw_error  # 负号因为坐标系转换
             # 限制角速度
-            self.cmd_vel.angular.z = np.clip(
+            self.cmd_vel.angular.x = np.clip(
                 angular_speed,
                 -self.max_angular_speed,
                 self.max_angular_speed
             )
         else:
             # 误差在阈值内，不转向
-            self.cmd_vel.angular.z = 0.0
+            self.cmd_vel.angular.x = 0.0
         
         # 距离控制 (Forward)
         # 如果面积太小（方块太远），前进
@@ -225,18 +291,18 @@ class RedBoxTracker:
         if self.area < (self.target_area - self.area_tolerance):
             # 太远，前进
             # 速度与面积误差成比例，但限制最大速度
-            linear_speed = 0.001 * abs(self.area_error)  # 比例系数
-            self.cmd_vel.linear.x = np.clip(
+            linear_speed = 0.01 * abs(self.area_error)  # 比例系数
+            self.cmd_vel.linear.y = np.clip(
                 linear_speed,
                 self.min_linear_speed,
                 self.max_linear_speed
             )
         elif self.area > (self.target_area + self.area_tolerance):
             # 太近，后退
-            self.cmd_vel.linear.x = -self.min_linear_speed
+            self.cmd_vel.linear.y = -self.min_linear_speed
         else:
             # 在目标范围内，停止前进
-            self.cmd_vel.linear.x = 0.0
+            self.cmd_vel.linear.y = 0.0
         
         # 记录调试信息
         rospy.loginfo_throttle(1.0,
@@ -293,7 +359,7 @@ class RedBoxTracker:
                    (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         cv2.putText(debug_image, f"Linear: {self.cmd_vel.linear.x:.2f} m/s", 
                    (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        cv2.putText(debugImage, f"Angular: {self.cmd_vel.angular.z:.2f} rad/s", 
+        cv2.putText(debug_image, f"Angular: {self.cmd_vel.angular.z:.2f} rad/s", 
                    (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         
         # 状态指示器
@@ -305,7 +371,7 @@ class RedBoxTracker:
             status_color = (0, 0, 255)
         
         cv2.putText(debug_image, status_text, 
-                   (width - 300, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, status_color, 2)
+                   (w - 300, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, status_color, 2)
         
         return debug_image
     

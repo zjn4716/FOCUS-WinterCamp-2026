@@ -32,3 +32,21 @@ rosrun unitree_controller unitree_servo
     'JL'键 - 控制机器人旋转
     空格键 - 停止并站立
 
+
+# 任务1运行命令
+启动 roscore 
+启动小乌龟 rosrun turtlesim turtlesim_node
+启动键盘控制 rosrun turtlesim turtle_teleop_key
+# 任务2运行命令
+
+# 任务3运行命令
+启动仿真  roslaunch unitree_guide gazeboSim.launch
+启动控制器 ./devel/lib/unitree_guide/junior_ctrl
+运行脚本 ./scripts/round.py
+
+# 任务4运行命令
+启动仿真  roslaunch unitree_guide gazeboSim.launch
+启动控制器 ./devel/lib/unitree_guide/junior_ctrl
+运行脚本 ./scripts/red_box_track.py
+
+
